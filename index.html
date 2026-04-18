@@ -58,6 +58,7 @@
         <div id="ui-week" style="font-size:10px; color:#94a3b8;">ТУР: 1</div>
     </div>
     <button class="btn" id="btn-next" style="display:none;" onclick="openTactics()">СЛЕДУЮЩИЙ ТУР</button>
+    <button class="btn" style="background:#ef4444; margin-top: auto; font-size: 10px;" onclick="resetGame()">СБРОСИТЬ ПРОГРЕСС</button>
 </div>
 
 <div class="main">
@@ -88,7 +89,7 @@
             <select id="w-league" onchange="updateWorldTable()" style="width:100%; padding:8px; margin-bottom:10px; background:#1e293b; color:white;"></select>
             <table id="world-table"></table>
         </div></div>
-        <div id="v-shop" class="view"><div class="box"><button class="btn" onclick="game.budget += 1000000000; updateUI();">ПОЛУЧИТЬ 1 МИЛЛИАРД €</button></div></div>
+        <div id="v-shop" class="view"><div class="box"><button class="btn" onclick="game.budget += 1000000000; updateUI(); saveGame();">ПОЛУЧИТЬ 1 МИЛЛИАРД €</button></div></div>
     </div>
 </div>
 
@@ -138,6 +139,36 @@ const LEAGUES = {
 
 let game = { club:"", league:"", budget:100000000, week:1, world:[], lineup:{} };
 
+// --- ФУНКЦИИ СОХРАНЕНИЯ ---
+function saveGame() {
+    localStorage.setItem('ufg_2026_save', JSON.stringify(game));
+    console.log("Прогресс сохранен!");
+}
+
+function loadGame() {
+    const saved = localStorage.getItem('ufg_2026_save');
+    if (saved) {
+        game = JSON.parse(saved);
+        if (game.club) {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            document.getElementById('btn-next').style.display = 'block';
+            updateUI();
+            updateWorldTable();
+            return true;
+        }
+    }
+    return false;
+}
+
+function resetGame() {
+    if(confirm("Вы уверены, что хотите начать заново? Весь прогресс будет удален.")) {
+        localStorage.removeItem('ufg_2026_save');
+        location.reload();
+    }
+}
+// --------------------------
+
 function getLang(l) {
     if (["РПЛ","ФНЛ","Вторая Лига А","Вторая Лига Б"].includes(l)) return "RU";
     if (l === "АПЛ") return "EN"; if (l === "Ла Лига") return "ES";
@@ -177,6 +208,7 @@ function startGame() {
     document.getElementById('game-ui').style.display = 'block';
     document.getElementById('btn-next').style.display = 'block';
     updateUI(); updateMarketClubs(); updateWorldTable();
+    saveGame(); // Сохраняем сразу после создания карьеры
 }
 
 function updateUI() {
@@ -218,6 +250,7 @@ function playMatch() {
     }
     game.week++;
     closeModals(); updateUI(); updateWorldTable();
+    saveGame(); // Сохраняем после каждого тура
 }
 
 function updateWorldTable() {
@@ -241,7 +274,9 @@ function searchMarket() {
     const lName = document.getElementById('m-league').value;
     const cName = document.getElementById('m-club').value;
     let pool = [];
-    game.world.find(x => x.name === lName).clubs.forEach(c => {
+    const leagueData = game.world.find(x => x.name === lName);
+    if (!leagueData) return;
+    leagueData.clubs.forEach(c => {
         if(c.name === game.club) return;
         if(cName !== "ALL" && c.name !== cName) return;
         c.squad.forEach(p => pool.push({...p, origin: c.name}));
@@ -264,6 +299,7 @@ function buyPlayer(id, val) {
             game.budget -= val * 1000000;
             game.world.find(x => x.name === game.league).clubs.find(x => x.name === game.club).squad.push(p);
             updateUI(); searchMarket();
+            saveGame(); // Сохраняем после покупки
         }
     }));
 }
@@ -322,13 +358,20 @@ function tab(v, b) {
 }
 function closeModals() { document.querySelectorAll('.modal, .overlay').forEach(x => x.style.display='none'); }
 
+// ИНИЦИАЛИЗАЦИЯ
 const sL = document.getElementById('start-league');
 for(let l in LEAGUES) sL.innerHTML += `<option value="${l}">${l}</option>`;
 const mL = document.getElementById('m-league');
 for(let l in LEAGUES) mL.innerHTML += `<option value="${l}">${l}</option>`;
 const wL = document.getElementById('w-league');
 for(let l in LEAGUES) wL.innerHTML += `<option value="${l}">${l}</option>`;
+
 updateStartClubs();
+
+// Пытаемся загрузить игру при старте страницы
+window.onload = function() {
+    loadGame();
+};
 </script>
 </body>
 </html>
