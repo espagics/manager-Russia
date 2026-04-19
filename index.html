@@ -4,30 +4,22 @@
     <meta charset="UTF-8">
     <title>Global Manager</title>
     <style>
-        :root { 
-            --bg: #020617; --panel: #0f172a; --accent: #38bdf8; --text: #f8fafc; 
-            --gold: #fbbf24; --danger: #ef4444; --green: #22c55e;
-        }
+        :root { --bg: #020617; --panel: #0f172a; --accent: #38bdf8; --text: #f8fafc; --gold: #fbbf24; --danger: #ef4444; --green: #22c55e; --gray: #94a3b8; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 320px; background: #070e1e; border-right: 1px solid #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .sidebar { width: 300px; background: #070e1e; border-right: 1px solid #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .stat-card { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; }
-        .balance { font-size: 18px; color: var(--green); font-weight: bold; margin-top: 5px; }
+        .balance { font-size: 18px; color: var(--green); font-weight: bold; }
         .main { flex: 1; padding: 20px; overflow-y: auto; background: radial-gradient(circle at top, #111827, #020617); }
         .box { background: #0f172a; border-radius: 12px; padding: 15px; border: 1px solid #1e293b; margin-bottom: 15px; }
         .view { display: none; } .view.active { display: block; }
         .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #070e1e; padding: 5px; border-radius: 10px; }
-        .tab-btn { padding: 10px; border: none; background: none; color: #94a3b8; cursor: pointer; border-radius: 6px; flex: 1; font-size: 10px; text-transform: uppercase; font-weight: bold; }
+        .tab-btn { padding: 10px; border: none; background: none; color: var(--gray); cursor: pointer; border-radius: 6px; flex: 1; font-size: 11px; font-weight: bold; }
         .tab-btn.active { background: var(--accent); color: #000; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { text-align: left; padding: 8px; color: #94a3b8; border-bottom: 1px solid #1e293b; }
+        th { text-align: left; padding: 8px; color: var(--gray); border-bottom: 1px solid #1e293b; }
         td { padding: 8px; border-bottom: 1px solid #0f172a; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: #1e293b; color: white; border: 1px solid #334155; border-radius: 6px; box-sizing: border-box; }
-        .ucl-card { background: linear-gradient(135deg, #0a1128, #1e40af); padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid var(--gold); }
-        .action-btn { padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; font-size: 10px; }
-        .buy { background: var(--green); color: white; }
-        .sell { background: var(--danger); color: white; }
-        .bracket-match { background: #1e293b; margin: 5px 0; padding: 8px; border-radius: 4px; border-left: 2px solid var(--gold); font-size: 11px; }
+        .ucl-match { display: flex; justify-content: space-between; padding: 10px; background: #1e293b; margin-bottom: 5px; border-radius: 6px; border-left: 4px solid var(--gold); }
     </style>
 </head>
 <body>
@@ -38,307 +30,252 @@
         <div id="ui-my-club" style="font-weight: bold; color: var(--accent);">Загрузка...</div>
         <div id="ui-balance" class="balance">0 €</div>
     </div>
-    <div class="stat-card">
-        <div id="ui-week" style="font-weight: bold;">НЕДЕЛЯ: 1</div>
-        <div id="ui-event" style="font-size:11px; color: var(--gold); margin-top:5px;">Сезон активен</div>
-    </div>
-    <button id="next-btn" class="btn" onclick="handleTurn()">СЛЕДУЮЩИЙ ТУР</button>
-    <button class="btn" style="background:#334155; color:white; margin-top:auto;" onclick="resetGame()">СБРОСИТЬ ИГРУ</button>
+    <div id="ui-week" style="font-weight: bold; text-align:center;">НЕДЕЛЯ: 1</div>
+    <button class="btn" onclick="handleTurn()">СЛЕДУЮЩИЙ ТУР</button>
+    <button class="btn" style="background:#334155; color:white; margin-top:auto;" onclick="resetGame()">СБРОС КАРЬЕРЫ</button>
 </div>
 
 <div class="main">
-    <div id="start-screen" class="box" style="display:none; max-width:400px; margin: 40px auto;">
-        <h3 style="text-align: center;">НАЧАЛО КАРЬЕРЫ</h3>
-        <select id="start-league" onchange="syncClubs()"></select>
-        <select id="start-club"></select>
-        <button class="btn" onclick="startGame()">НАЧАТЬ</button>
+    <div id="start-screen" class="box" style="display:none; max-width:400px; margin: 40px auto; text-align:center;">
+        <h3>НОВАЯ ИГРА</h3>
+        <select id="start-league" onchange="syncClubs()" style="width:100%; padding:10px; margin-bottom:10px;"></select>
+        <select id="start-club" style="width:100%; padding:10px; margin-bottom:20px;"></select>
+        <button class="btn" onclick="startGame()">НАЧАТЬ КАРЬЕРУ</button>
     </div>
 
     <div id="game-ui" style="display:none;">
         <div class="tabs">
             <button class="tab-btn active" onclick="tab('home', this)">СОСТАВ</button>
-            <button class="tab-btn" onclick="tab('market', this)">РЫНОК</button>
+            <button class="tab-btn" onclick="tab('market', this)">МАРКЕТ</button>
             <button class="tab-btn" onclick="tab('world', this)">ТАБЛИЦЫ</button>
-            <button class="tab-btn" onclick="tab('euro', this)" style="color:var(--gold)">UCL</button>
+            <button class="tab-btn" onclick="tab('ucl', this)" style="color:var(--gold)">UCL</button>
         </div>
-
-        <div id="v-home" class="view active"><div class="box"><h3>Мой состав</h3><table id="lineup-table"></table></div></div>
-        <div id="v-market" class="view"><div class="box"><h3>Рынок</h3><div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;"><input type="text" id="m-name" placeholder="Фамилия..." oninput="searchPlayers()"><input type="number" id="m-min-rtg" placeholder="Мин. РТГ" oninput="searchPlayers()"><select id="m-league" onchange="searchPlayers()"><option value="">Все лиги</option></select></div><table id="market-results"></table></div></div>
-        <div id="v-world" class="view"><div class="box"><select id="w-league" onchange="updateWorldTable()"></select><table id="world-table"></table></div></div>
-        <div id="v-euro" class="view"><div id="ucl-content"></div></div>
+        <div id="v-home" class="view active"><div class="box"><table id="lineup-table"></table></div></div>
+        <div id="v-market" class="view"><div class="box"><div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;"><select id="f-league" onchange="searchPlayers()"><option value="">Все лиги</option></select><input type="text" id="f-club" placeholder="Клуб..." oninput="searchPlayers()" style="padding:8px; background:#1e293b; color:white; border:1px solid #334155; border-radius:4px;"><input type="number" id="f-rating" placeholder="Мин. РТГ" oninput="searchPlayers()" style="padding:8px; background:#1e293b; color:white; border:1px solid #334155; border-radius:4px;"></div><table id="market-results"></table></div></div>
+        <div id="v-world" class="view"><div class="box"><select id="w-league" onchange="updateWorldTable()"></select><table id="world-table" style="margin-top:10px;"></table></div></div>
+        <div id="v-ucl" class="view"><div class="box" id="ucl-info"></div><div id="ucl-bracket"></div></div>
     </div>
 </div>
 
 <script>
-// Данные REAL_DATA и LEAGUES_CONFIG остаются прежними
-const REAL_DATA = { 
-    "Зенит": {gk:["Латышонок"], def:["Нино","Сантос","Эракович","Адамов","Чистяков"], mid:["Вендел","Клаудиньо","Барриос","Глушенков","Мостовой"], att:["Кассьерра","Соболев","Педро"]}, 
-    "Спартак": {gk:["Максименко"], def:["Бабич","Чернов","Денисов","Рябчук"], mid:["Барко","Мартинс","Зобнин","Пруцев"], att:["Угальде","Бонгонда","Маркиньос"]}, 
-    "Краснодар": {gk:["Агкацев"], def:["Тормена","Коста","Оласа","Петров"], mid:["Сперцян","Черников","Кривцов","Пина"], att:["Кордоба","Виктор Са","Батчи"]}, 
-    "ЦСКА": {gk:["Акинфеев"], def:["Роша","Дивеев","Мойзес","Келлвен"], mid:["Обляков","Зделар","Кисляк","Файзуллаев"], att:["Мусаев","Гуарирапа"]}, 
-    "Авангард": {gk:["Ташаев"], def:["Кумсаров","Сухарев","Седов","Некрасов"], mid:["Свободчиков","Коньшин","Борисов"], att:["Хребтов","Захаров","Князев"]}, 
-    "Ман Сити": {gk:["Эдерсон"], def:["Диаш","Гвардиол","Аканджи","Уокер"], mid:["Родри","Де Брюйне","Фоден","Бернарду"], att:["Холанд","Грилиш","Доку"]}, 
-    "Арсенал": {gk:["Райя"], def:["Салиба","Габриэль","Уайт","Тимбер"], mid:["Эдегор","Райс","Мерино","Парти"], att:["Сака","Хавертц","Мартинелли"]}, 
-    "Ливерпуль": {gk:["Алиссон"], def:["Ван Дейк","Конате","Трент","Робертсон"], mid:["Мак Аллистер","Собослаи","Гравенберх"], att:["Салах","Нуньес","Диас"]}, 
-    "Челси": {gk:["Санчес"], def:["Колуилл","Фофана","Кукурелья","Джеймс"], mid:["Энцо","Кайседо","Палмер","Нету"], att:["Джексон","Феликс","Мадуэке"]}, 
-    "Реал Мадрид": {gk:["Куртуа"], def:["Рюдигер","Милитао","Карвахаль","Менди"], mid:["Беллингем","Вальверде","Модрич","Чуамени"], att:["Мбаппе","Винисиус","Родриго"]}, 
-    "Барселона": {gk:["Тер Штеген"], def:["Кубарси","Мартинес","Кунде","Бальде"], mid:["Педри","Гави","Ольмо","Де Йонг"], att:["Левандовски","Ямаль","Рафинья"]}, 
-    "Атлетико": {gk:["Облак"], def:["Хименес","Ле Норман","Вицель","Молина"], mid:["Галлахер","Де Пауль","Коке","Льоренте"], att:["Гризманн","Альварес","Серлот"]}, 
-    "Бавария": {gk:["Нойер"], def:["Упамекано","Ким","Дэвис","Геррейру"], mid:["Киммих","Мусиала","Павлович","Лаймер"], att:["Кейн","Сане","Гнабри"]}, 
-    "Байер": {gk:["Градецки"], def:["Та","Тапсоба","Инкапье","Гримальдо"], mid:["Виртц","Джака","Андрих","Фримпонг"], att:["Бонифасе","Шик","Адли"]}, 
-    "Боруссия Д": {gk:["Кобель"], def:["Шлоттербек","Антон","Рюэрсон","Бенсебаини"], mid:["Брандт","Джан","Забитцер","Гросс"], att:["Гирасси","Мален","Адейеми"]}, 
-    "Интер": {gk:["Зоммер"], def:["Бастони","Павар","Ачерби","Димарко"], mid:["Барелла","Чалханоглу","Мхитарян"], att:["Лаутаро","Тюрам","Тареми"]}, 
-    "Ювентус": {gk:["Ди Грегорио"], def:["Бремер","Гатти","Камбиазо","Данило"], mid:["Копмейнерс","Дуглас Луис","Локателли"], att:["Влахович","Йилдиз","Консейсау"]}, 
-    "Милан": {gk:["Меньян"], def:["Томори","Павлович","Эрнандес","Эмерсон"], mid:["Рейндерс","Фофана","Лофтус-Чук"], att:["Леау","Мората","Пулишич"]}, 
-    "ПСЖ": {gk:["Доннарумма"], def:["Маркиньос","Хакими","Мендеш","Лукас Эрнандес"], mid:["Заир-Эмери","Витинья","Невеш","Фабиан Руис"], att:["Дембеле","Барколя","Коло-Муани"]}, 
-    "Монако": {gk:["Кен"], def:["Керер","Салису","Вандерсон","Кайо Энрике"], mid:["Головин","Закария","Камара","Минамино"], att:["Эмболо","Балогун"]}
-};
-
 const LEAGUES_CONFIG = {
-    "РПЛ": {base: 74, teams: ["Зенит","Краснодар","Спартак","Динамо М","Локомотив","ЦСКА","Ростов","Рубин","Крылья Советов","Ахмат","Пари НН","Оренбург","Факел","Акрон","Химки","Динамо Мх"]},
-    "ФНЛ": {base: 65, teams: ["Балтика","Сочи","Урал","Торпедо М","Родина","Енисей","Шинник","Арсенал Тула","Нефтехимик","КАМАЗ","Тюмень","СКА-Хабаровск","Чайка","Ротор","Уфа","Черноморец","Сокол","Алания"]},
-    "Вторая Лига А": {base: 58, teams: ["Велес","Ленинградец","Волгарь","Авангард","Сибирь","Кубань","Текстильщик","Челябинск","Калуга","Спартак Кострома"]},
-    "Вторая Лига Б": {base: 52, teams: ["Динамо Киров","Рубин-2","Амкар","Зенит Пенза","Коломна","Знамя Труда","Строгино","Квант","Сатурн","Тверь"]},
-    "АПЛ": {base: 83, teams: ["Ман Сити","Ливерпуль","Арсенал","Челси","Ман Юнайтед","Тоттенхэм"]},
-    "Ла Лига": {base: 82, teams: ["Реал Мадрид","Барселона","Атлетико","Вильярреал","Севилья"]},
-    "Бундеслига": {base: 81, teams: ["Бавария","Байер","Боруссия Д","Лейпциг","Айнтрахт"]},
-    "Серия А": {base: 81, teams: ["Интер","Ювентус","Милан","Наполи","Рома"]},
-    "Лига 1": {base: 80, teams: ["ПСЖ","Монако","Марсель","Лион","Лилль"]}
+    "РПЛ": {base:83, slots:4, budget:60, lang:"RU", teams:["Зенит","Краснодар","Спартак","Локомотив","Динамо М","ЦСКА","Ростов","Рубин","Крылья Советов","Ахмат","Пари НН","Оренбург","Факел","Акрон","Химки","Динамо Мх"]},
+    "ФНЛ": {base:75, slots:0, budget:40, lang:"RU", teams:["Балтика","Сочи","Урал","Торпедо","Арсенал","Енисей","Родина","КАМАЗ","Шинник","Нефтехимик","СКА","Уфа","Чайка","Черноморец","Тюмень","Ротор"]},
+    "Лига А": {base:70, slots:0, budget:20, lang:"RU", teams:["Велес","Муром","Новосибирск","Металлург Лп","Спартак Кс","Волгарь","Авангард","Текстильщик","Калуга","Иртыш"]},
+    "Лига Б": {base:65, slots:0, budget:10, lang:"RU", teams:["Динамо Кр","Композит","Спартак Тм","Зенит Пн","Сатурн","Динамо Бр","Орел","Квант","Сахалин","Коломна"]},
+    "АПЛ": {base:84, slots:4, budget:90, lang:"EN", teams:["Ман Сити","Ливерпуль","Арсенал","Ман Юнайтед","Челси","Тоттенхэм","Ньюкасл","Астон Вилла","Брайтон","Вест Хэм","Вулверхэмптон","Кристал Пэлас","Фулхэм","Брентфорд","Борнмут","Ноттингем","Эвертон","Ипсвич","Лестер","Саутгемптон"]},
+    "Ла Лига": {base:84, slots:4, budget:90, lang:"ES", teams:["Реал Мадрид","Барселона","Атлетико","Жирона","Атлетик","Реал Сосьедад","Бетис","Валенсия","Вильярреал","Хетафе","Осасуна","Севилья","Мальорка","Райо Вальекано","Сельта","Алавес","Эспаньол","Леганес","Вальядолид","Лас-Пальмас"]},
+    "Серия A": {base:83, slots:4, budget:90, lang:"IT", teams:["Ювентус","Интер","Милан","Наполи","Аталанта","Рома","Лацио","Фиорентина","Торино","Болонья","Монца","Дженоа","Удинезе","Верона","Лечче","Кальяри","Парма","Комо","Венеция","Эмполи"]},
+    "Бундеслига": {base:83, slots:4, budget:90, lang:"DE", teams:["Бавария","Байер","Боруссия Д","РБ Лейпциг","Штутгарт","Айнтрахт","Хоффенхайм","Фрайбург","Хайденхайм","Вердер","Аугсбург","Вольфсбург","Боруссия М","Унион","Майнц","Санкт-Паули","Киль","Бохум"]},
+    "Лига 1": {base:82, slots:4, budget:90, lang:"FR", teams:["ПСЖ","Монако","Марсель","Лион","Лилль","Ренн","Ницца","Ланс","Реймс","Страсбур","Монпелье","Тулуза","Нант","Гавр","Анже","Сент-Этьен","Осер","Брест"]},
+    "Суперлига": {base:79, slots:2, budget:60, lang:"TR", teams:["Галатасарай","Фенербахче","Бешикташ","Трабзонспор","Башакшехир","Касымпаша","Сивасспор","Аланьяспор","Ризеспор","Антальяспор","Газиантеп","Самсунспор","Кайсериспор","Хатайспор","Коньяспор","Бодрум","Эюпспор","Гёзтепе"]},
+    "Примейра": {base:80, slots:2, budget:60, lang:"PT", teams:["Бенфика","Порту","Спортинг","Брага","Витория","Фамаликан","Риу Аве","Боавишта","Жил Висенте","Эшторил"]},
+    "Эредивизи": {base:79, slots:2, budget:60, lang:"NL", teams:["ПСВ","Фейеноорд","Аякс","АЗ Алкмар","Твенте","Утрехт","Гоу Эхед","Спарта"]},
+    "Бродячие": {base:79, slots:0, budget:30, lang:"GLOBAL", teams:["Карабах","Селтик","Рейнджерс","Шериф","Будэ-Глимт","Мольде","Црвена Звезда","Партизан","Пафос","Юнион СЖ","Брюгге","Копенгаген","Кайрат","Олимпиакос","Славия","Виктория","Динамо З","Зальцбург","Слован","Янг Бойз"]}
 };
 
-let game = { club: "", league: "", balance: 30000000, week: 1, year: 2026, world: [], ucl: null };
+const REAL_PLAYERS = {
+    "Зенит": {GK:["Латышонок"], DEF:["Нино","Сантос","Эракович","Адамов","Чистяков"], MID:["Вендел","Клаудиньо","Барриос","Глушенков","Мостовой"], ATT:["Кассьерра","Соболев","Педро"]},
+    "Спартак": {GK:["Максименко"], DEF:["Бабич","Чернов","Денисов","Рябчук"], MID:["Барко","Мартинс","Зобнин","Пруцев"], ATT:["Угальде","Бонгонда","Маркиньос"]},
+    "Краснодар": {GK:["Агкацев"], DEF:["Тормена","Коста","Оласа","Петров"], MID:["Сперцян","Черников","Кривцов","Пина"], ATT:["Кордоба","Виктор Са","Батчи"]},
+    "ЦСКА": {GK:["Акинфеев"], DEF:["Роша","Дивеев","Мойзес","Келлвен"], MID:["Обляков","Зделар","Кисляк","Файзуллаев"], ATT:["Мусаев","Гуарирапа"]},
+    "Ман Сити": {GK:["Эдерсон"], DEF:["Диаш","Гвардиол","Аканджи","Уокер"], MID:["Родри","Де Брюйне","Фоден","Бернарду"], ATT:["Холанд","Грилиш","Доку"]},
+    "Арсенал": {GK:["Райя"], DEF:["Салиба","Габриэль","Уайт","Тимбер"], MID:["Эдегор","Райс","Мерино","Парти"], ATT:["Сака","Хавертц","Мартинелли"]},
+    "Ливерпуль": {GK:["Алиссон"], DEF:["Ван Дейк","Конате","Трент","Робертсон"], MID:["Мак Аллистер","Собослаи","Гравенберх"], ATT:["Салах","Нуньес","Диас"]},
+    "Реал Мадрид": {GK:["Куртуа"], DEF:["Рюдигер","Милитао","Карвахаль","Менди"], MID:["Беллингем","Вальверде","Модрич","Чуамени"], ATT:["Мбаппе","Винисиус","Родриго"]},
+    "Барселона": {GK:["Тер Штеген"], DEF:["Кубарси","Мартинес","Кунде","Бальде"], MID:["Педри","Гави","Ольмо","Де Йонг"], ATT:["Левандовски","Ямаль","Рафинья"]},
+    "ПСЖ": {GK:["Доннарумма"], DEF:["Маркиньос","Хакими","Мендеш","Лукас Эрнандес"], MID:["Заир-Эмери","Витинья","Невеш","Фабиан Руис"], ATT:["Дембеле","Барколя","Коло-Муани"]}
+};
 
-function save() { localStorage.setItem('ufg_save_v6', JSON.stringify(game)); }
-function load() {
-    const s = localStorage.getItem('ufg_save_v6');
-    if(s) { game = JSON.parse(s); document.getElementById('game-ui').style.display='block'; updateUI(); }
-    else { document.getElementById('start-screen').style.display='block'; }
+const SURNAMES = {
+    "RU": ["Иванов", "Смирнов", "Петров", "Волков", "Кузнецов", "Соколов", "Лебедев", "Козлов", "Новиков", "Морозов"],
+    "EN": ["Smith", "Walker", "White", "Johnson", "Brown", "Taylor", "Miller", "Wilson", "Moore", "Anderson"],
+    "ES": ["Garcia", "Rodriguez", "Gonzalez", "Lopez", "Martinez", "Perez", "Sanchez", "Ramirez", "Torres", "Ruiz"],
+    "IT": ["Rossi", "Ferrari", "Russo", "Bianchi", "Esposito", "Colombo", "Romano", "Ricci", "Marino", "Greco"],
+    "DE": ["Muller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Koch"],
+    "FR": ["Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois", "Moreau", "Laurent"],
+    "TR": ["Yilmaz", "Kaya", "Demir", "Sahin", "Celik", "Yildiz", "Arslan", "Erdogan", "Polat", "Aydin"],
+    "PT": ["Silva", "Santos", "Ferreira", "Pereira", "Oliveira", "Costa", "Rodrigues", "Martins", "Jesus", "Sousa"],
+    "NL": ["De Jong", "Jansen", "De Vries", "Van den Berg", "Bakker", "Visser", "Smit", "Meijer", "De Boer", "Mulder"],
+    "GLOBAL": ["Aliyev", "Jovanovic", "Kovacs", "Hansen", "Larsen", "Stojanovic", "Popov", "Nielsen", "Ivanov", "Savic"]
+};
+
+let game = { club: "", league: "", balance: 0, week: 1, world: [], ucl: { stage: "Общий этап", table: [], playoffs: [], week: 1 } };
+
+function getPrice(r) {
+    if (r >= 90) return 120000000;
+    if (r === 89) return 100000000;
+    if (r === 88) return 90000000;
+    if (r === 87) return 80000000;
+    if (r === 86) return 70000000;
+    if (r === 85) return 60000000;
+    if (r >= 80) return 40000000;
+    if (r >= 75) return 20000000;
+    return 10000000;
 }
 
-function getPrice(rtg) { return Math.floor(Math.pow(rtg/10, 5) * 1200); }
+function generateSquad(team, league) {
+    let sq = [];
+    let base = LEAGUES_CONFIG[league].base;
+    let lang = LEAGUES_CONFIG[league].lang;
+    let pool = SURNAMES[lang] || SURNAMES["GLOBAL"];
 
-function generateSquad(teamName, leagueName) {
-    let conf = LEAGUES_CONFIG[leagueName];
-    let squad = [];
-    let source = REAL_DATA[teamName] || {};
-    ["GK", "DEF", "MID", "ATT"].forEach(pos => {
-        let players = source[pos.toLowerCase()] || ["Игрок " + pos];
-        players.forEach(name => {
-            squad.push({ id: Math.random(), name, pos, rating: conf.base + (REAL_DATA[teamName] ? 5 : 0) + Math.floor(Math.random()*6), club: teamName, league: leagueName });
+    if (REAL_PLAYERS[team]) {
+        for (let pos in REAL_PLAYERS[team]) {
+            REAL_PLAYERS[team][pos].forEach(name => {
+                sq.push({ id: Math.random(), name: name, pos: pos, rating: base + Math.floor(Math.random()*6), inLineup: true });
+            });
+        }
+    } else {
+        ["GK","DEF","DEF","DEF","DEF","MID","MID","MID","ATT","ATT","ATT"].forEach(pos => {
+            let name = pool[Math.floor(Math.random()*pool.length)];
+            sq.push({ id: Math.random(), name: name, pos: pos, rating: base + Math.floor(Math.random()*6), inLineup: true });
         });
-    });
-    while(squad.length < 15) squad.push({ id: Math.random(), name: "Резерв", pos: "MID", rating: conf.base, club: teamName, league: leagueName });
-    return squad;
+    }
+    return sq;
+}
+
+function save() { localStorage.setItem('ufg_2026_pro', JSON.stringify(game)); }
+function load() {
+    const s = localStorage.getItem('ufg_2026_pro');
+    if(s) { game = JSON.parse(s); document.getElementById('game-ui').style.display='block'; updateUI(); }
+    else { document.getElementById('start-screen').style.display='block'; fillStart(); }
+}
+
+function fillStart() {
+    let sl = document.getElementById('start-league');
+    for(let n in LEAGUES_CONFIG) if(n !== "Бродячие") sl.innerHTML += `<option value="${n}">${n}</option>`;
+    syncClubs();
+}
+
+function syncClubs() {
+    let l = document.getElementById('start-league').value;
+    let sc = document.getElementById('start-club'); sc.innerHTML = "";
+    LEAGUES_CONFIG[l].teams.forEach(t => sc.innerHTML += `<option value="${t}">${t}</option>`);
 }
 
 function startGame() {
     game.league = document.getElementById('start-league').value;
     game.club = document.getElementById('start-club').value;
-    game.world = [];
+    game.balance = LEAGUES_CONFIG[game.league].budget * 1000000;
     for(let lName in LEAGUES_CONFIG) {
-        let clubs = LEAGUES_CONFIG[lName].teams.map(name => ({ name, pts: 0, squad: generateSquad(name, lName) }));
-        game.world.push({ name: lName, clubs, max: (clubs.length-1)*2, current: 0 });
+        let clubs = LEAGUES_CONFIG[lName].teams.map(name => ({ name, pts: 0, g: 0, squad: generateSquad(name, lName) }));
+        game.world.push({ name: lName, clubs });
     }
-    initUCL(true); save(); location.reload();
+    initUCL(); save(); location.reload();
 }
 
-function initUCL(first = false) {
+function initUCL() {
     let pool = [];
-    if(first) {
-        ["АПЛ","Ла Лига","Бундеслига","РПЛ"].forEach(ln => {
-            let l = game.world.find(x => x.name === ln);
-            if(l) pool.push(...l.clubs.slice(0, 4));
-        });
-    } else {
-        game.world.forEach(l => { if(l.clubs.length >= 4) pool.push(...[...l.clubs].sort((a,b)=>b.pts-a.pts).slice(0, 2)); });
-    }
-    let selected = pool.slice(0, 16).sort(()=>Math.random()-0.5);
-    let groups = [[],[],[],[]];
-    selected.forEach(team => {
-        let teamLeague = game.world.find(l => l.clubs.some(c => c.name === team.name)).name;
-        for(let g of groups) {
-            let hasLeague = g.some(t => game.world.find(l => l.clubs.some(c => c.name === t.name)).name === teamLeague);
-            if(g.length < 4 && !hasLeague) { g.push({name: team.name, uPts: 0}); return; }
-        }
-        for(let g of groups) { if(g.length < 4) { g.push({name: team.name, uPts: 0}); return; } }
+    game.world.forEach(l => {
+        if (LEAGUES_CONFIG[l.name].slots > 0) { pool.push(...l.clubs.slice(0, LEAGUES_CONFIG[l.name].slots).map(c => ({ name: c.name, pts: 0 }))); }
     });
-    game.ucl = { groups, day: 0, playoff: null };
+    pool.push(...game.world.find(l => l.name === "Бродячие").clubs.slice(0, 6).map(c => ({ name: c.name, pts: 0 })));
+    game.ucl.table = pool;
 }
 
 function handleTurn() {
-    let totalSeasonMax = Math.max(...game.world.map(l => l.max));
-    if(game.week > totalSeasonMax + 12) {
-        alert("Сезон завершен!"); game.year++; game.week = 1;
-        game.world.forEach(l => { l.current = 0; l.clubs.forEach(c => c.pts = 0); });
-        initUCL(); save(); updateUI(); return;
-    }
-
-    if (game.week % 4 === 0) {
-        simulateUCL();
-        document.getElementById('ui-event').innerText = "ТУР UCL";
-    } else {
-        simulateLeagues();
-        document.getElementById('ui-event').innerText = "ТУР ЧЕМПИОНАТА";
-    }
+    if (game.week < 8) {
+        game.world.forEach(l => l.clubs.forEach(c => { if(Math.random() > 0.5) c.pts += 3; }));
+        game.ucl.table.forEach(t => { if(Math.random() > 0.5) t.pts += 3; });
+        game.ucl.week++;
+    } else if (game.week === 8) { startUCLPlayoffs(); } else { simulateUCLStage(); }
     game.week++; save(); updateUI();
 }
 
-function simulateLeagues() {
-    game.world.forEach(l => {
-        if (l.current < l.max) {
-            let shuffled = [...l.clubs].sort(() => Math.random() - 0.5);
-            for (let i = 0; i < shuffled.length; i += 2) {
-                if (!shuffled[i+1]) break; 
-                let res = Math.random();
-                if (res < 0.33) shuffled[i].pts += 3;
-                else if (res < 0.66) shuffled[i+1].pts += 3;
-                else { shuffled[i].pts += 1; shuffled[i+1].pts += 1; }
-            }
-            l.current++;
-        }
+function startUCLPlayoffs() {
+    game.ucl.table.sort((a,b) => b.pts - a.pts);
+    game.ucl.stage = "Стыковые матчи";
+    let teams9to24 = game.ucl.table.slice(8, 24);
+    game.ucl.playoffs = [];
+    for(let i=0; i<teams9to24.length; i+=2) { game.ucl.playoffs.push({ t1: teams9to24[i].name, t2: teams9to24[i+1].name, s1: 0, s2: 0, winner: "" }); }
+}
+
+function simulateUCLStage() {
+    game.ucl.playoffs.forEach(m => {
+        m.s1 = Math.floor(Math.random()*4); m.s2 = Math.floor(Math.random()*4);
+        if(m.s1 === m.s2) m.s1++;
+        m.winner = m.s1 > m.s2 ? m.t1 : m.t2;
     });
+    if (game.ucl.stage === "Стыковые матчи") {
+        let winners = game.ucl.playoffs.map(m => m.winner);
+        let top8 = game.ucl.table.slice(0, 8).map(t => t.name);
+        game.ucl.stage = "1/8 финала";
+        game.ucl.playoffs = top8.map((t, i) => ({ t1: t, t2: winners[i], s1:0, s2:0, winner: "" }));
+    } else if (game.ucl.stage === "1/8 финала") { nextUCLStage("1/4 финала"); } 
+    else if (game.ucl.stage === "1/4 финала") { nextUCLStage("1/2 финала"); } 
+    else if (game.ucl.stage === "1/2 финала") { nextUCLStage("ФИНАЛ"); }
 }
 
-function simulateUCL() {
-    if (game.ucl.day < 6) {
-        game.ucl.groups.forEach(g => {
-            let s = [...g].sort(() => Math.random() - 0.5);
-            for (let i = 0; i < s.length; i += 2) {
-                let res = Math.random();
-                if (res < 0.33) s[i].uPts += 3; else if (res < 0.66) s[i+1].uPts += 3; else { s[i].uPts += 1; s[i+1].uPts += 1; }
-            }
-        });
-        game.ucl.day++;
-        if(game.ucl.day === 6) createPlayoff();
-    } else if (game.ucl.playoff) {
-        simulatePlayoffRound();
-    }
-}
-
-function createPlayoff() {
-    let qualifiers = [];
-    game.ucl.groups.forEach(g => {
-        let sorted = [...g].sort((a,b)=>b.uPts - a.uPts);
-        qualifiers.push(sorted[0], sorted[1]);
-    });
-    qualifiers.sort(()=>Math.random()-0.5);
-    game.ucl.playoff = {
-        qf: [ [qualifiers[0], qualifiers[1]], [qualifiers[2], qualifiers[3]], [qualifiers[4], qualifiers[5]], [qualifiers[6], qualifiers[7]] ],
-        sf: [], f: [], winner: null
-    };
-}
-
-function simulatePlayoffRound() {
-    let p = game.ucl.playoff;
-    const win = (m) => Math.random() > 0.5 ? m[0] : m[1];
-    
-    if (p.sf.length === 0) {
-        let winners = p.qf.map(m => win(m));
-        p.sf = [ [winners[0], winners[1]], [winners[2], winners[3]] ];
-    } else if (p.f.length === 0) {
-        let winners = p.sf.map(m => win(m));
-        p.f = [winners[0], winners[1]];
-    } else if (!p.winner) {
-        p.winner = win(p.f);
-        alert("Победитель UCL: " + p.winner.name);
-    }
-}
-
-function updateUCL() {
-    let h = `<h3>UCL Tournament ${game.year}</h3>`;
-    if (game.ucl.day < 6) {
-        game.ucl.groups.forEach((g,i) => {
-            h += `<div class="ucl-card"><b>Группа ${String.fromCharCode(65+i)}</b><table>`;
-            [...g].sort((a,b)=>b.uPts-a.uPts).forEach(t => h += `<tr><td>${t.name}</td><td>${t.uPts}</td></tr>`);
-            h += `</table></div>`;
-        });
-    } else if (game.ucl.playoff) {
-        let p = game.ucl.playoff;
-        h += `<h4>Плей-офф</h4>`;
-        h += `<b>1/4 Финала:</b>` + p.qf.map(m => `<div class="bracket-match">${m[0].name} vs ${m[1].name}</div>`).join('');
-        if(p.sf.length) h += `<br><b>1/2 Финала:</b>` + p.sf.map(m => `<div class="bracket-match">${m[0].name} vs ${m[1].name}</div>`).join('');
-        if(p.f.length) h += `<br><b>ФИНАЛ:</b> <div class="bracket-match" style="background:var(--gold); color:black">${p.f[0].name} vs ${p.f[1].name}</div>`;
-        if(p.winner) h += `<h2 style="color:var(--gold); text-align:center">ЧЕМПИОН: ${p.winner.name}</h2>`;
-    }
-    document.getElementById('ucl-content').innerHTML = h;
-}
-
-// Вспомогательные функции (sell, buy, search, updateUI, syncClubs, reset) остаются без изменений
-function sellPlayer(id) {
-    let myC = game.world.find(l => l.name === game.league).clubs.find(c => c.name === game.club);
-    if(myC.squad.length <= 11) { alert("Минимум 11 игроков!"); return; }
-    let idx = myC.squad.findIndex(p => p.id === id);
-    game.balance += Math.floor(getPrice(myC.squad[idx].rating) * 0.8);
-    myC.squad.splice(idx, 1);
-    save(); updateUI();
-}
-
-function buyPlayer(id, fromClub) {
-    let sellerClub;
-    game.world.forEach(l => l.clubs.forEach(c => { if(c.name === fromClub) sellerClub = c; }));
-    let idx = sellerClub.squad.findIndex(p => p.id === id);
-    let p = sellerClub.squad[idx];
-    let price = getPrice(p.rating);
-    if(game.balance >= price) {
-        game.balance -= price;
-        let transfered = sellerClub.squad.splice(idx, 1)[0];
-        transfered.club = game.club;
-        game.world.find(l => l.name === game.league).clubs.find(c => c.name === game.club).squad.push(transfered);
-        save(); updateUI(); searchPlayers();
-    } else alert("Нет денег!");
+function nextUCLStage(name) {
+    let winners = game.ucl.playoffs.map(m => m.winner);
+    game.ucl.stage = name; game.ucl.playoffs = [];
+    for(let i=0; i<winners.length; i+=2) { if(winners[i+1]) game.ucl.playoffs.push({ t1: winners[i], t2: winners[i+1], s1:0, s2:0, winner: "" }); }
 }
 
 function searchPlayers() {
-    let name = document.getElementById('m-name').value.toLowerCase();
-    let minR = document.getElementById('m-min-rtg').value || 0;
-    let leg = document.getElementById('m-league').value;
+    const fL = document.getElementById('f-league').value;
+    const fC = document.getElementById('f-club').value.toLowerCase();
+    const fR = parseInt(document.getElementById('f-rating').value) || 0;
     let res = [];
     game.world.forEach(l => {
-        if(!leg || l.name === leg) {
+        if(!fL || l.name === fL) {
             l.clubs.forEach(c => {
-                if(c.name !== game.club) {
-                    c.squad.forEach(p => { if(p.rating >= minR && p.name.toLowerCase().includes(name)) res.push(p); });
+                if(c.name !== game.club && (!fC || c.name.toLowerCase().includes(fC))) {
+                    c.squad.forEach(p => { if(p.rating >= fR) res.push({...p, club: c.name}); });
                 }
             });
         }
     });
     let h = `<tr><th>Игрок</th><th>РТГ</th><th>Цена</th><th></th></tr>`;
-    res.slice(0,10).forEach(p => {
-        h += `<tr><td>${p.name}<br><small>${p.club}</small></td><td>${p.rating}</td><td>${(getPrice(p.rating)/1e6).toFixed(1)}M</td>
-        <td><button class="action-btn buy" onclick="buyPlayer(${p.id}, '${p.club}')">Купить</button></td></tr>`;
+    res.sort((a,b) => b.rating - a.rating).slice(0, 15).forEach(p => {
+        let price = getPrice(p.rating);
+        h += `<tr><td>${p.name}<br><small>${p.club}</small></td><td>${p.rating}</td><td>${(price/1000000).toFixed(0)}М</td><td><button onclick="buyPlayer('${p.club}', ${p.id}, ${price})">BUY</button></td></tr>`;
     });
     document.getElementById('market-results').innerHTML = h;
 }
 
+function buyPlayer(fromName, id, price) {
+    if (game.balance < price) return alert("Недостаточно средств!");
+    let fromClub;
+    game.world.forEach(l => l.clubs.forEach(c => { if(c.name === fromName) fromClub = c; }));
+    let pIdx = fromClub.squad.findIndex(x => x.id === id);
+    let p = fromClub.squad.splice(pIdx, 1)[0];
+    game.balance -= price;
+    let myClub = game.world.find(l => l.name === game.league).clubs.find(c => c.name === game.club);
+    myClub.squad.push(p);
+    save(); updateUI(); searchPlayers();
+}
+
 function updateUI() {
-    let myC = game.world.find(l => l.name === game.league).clubs.find(c => c.name === game.club);
+    let myClub = game.world.find(l => l.name === game.league).clubs.find(c => c.name === game.club);
     document.getElementById('ui-my-club').innerText = game.club;
     document.getElementById('ui-balance').innerText = game.balance.toLocaleString() + " €";
     document.getElementById('ui-week').innerText = `НЕДЕЛЯ: ${game.week}`;
-    let h = `<tr><th>Поз</th><th>Имя</th><th>РТГ</th><th>Цена</th><th></th></tr>`;
-    myC.squad.sort((a,b)=>b.rating-a.rating).forEach(p => {
-        h += `<tr><td>${p.pos}</td><td>${p.name}</td><td>${p.rating}</td><td>${(getPrice(p.rating)/1e6).toFixed(1)}M</td>
-        <td><button class="action-btn sell" onclick="sellPlayer(${p.id})">S</button></td></tr>`;
-    });
+    let h = `<tr><th>Поз</th><th>Имя</th><th>РТГ</th></tr>`;
+    myClub.squad.forEach(p => h += `<tr><td>${p.pos}</td><td>${p.name}</td><td>${p.rating}</td></tr>`);
     document.getElementById('lineup-table').innerHTML = h;
-    updateWorldTable(); updateUCL();
+    updateWorldTable(); updateUCLUI();
+}
+
+function updateUCLUI() {
+    document.getElementById('ucl-info').innerText = `${game.ucl.stage}`;
+    let h = "";
+    if (game.ucl.stage === "Общий этап") {
+        h = "<table><tr><th>#</th><th>Клуб</th><th>О</th></tr>";
+        [...game.ucl.table].sort((a,b) => b.pts - a.pts).forEach((t, i) => { h += `<tr><td>${i+1}</td><td>${t.name}</td><td>${t.pts}</td></tr>`; });
+        h += "</table>";
+    } else { game.ucl.playoffs.forEach(m => { h += `<div class="ucl-match"><span>${m.t1}</span> <b>${m.s1}:${m.s2}</b> <span>${m.t2}</span></div>`; }); }
+    document.getElementById('ucl-bracket').innerHTML = h;
 }
 
 function updateWorldTable() {
     let ln = document.getElementById('w-league').value || game.league;
     let l = game.world.find(x => x.name === ln);
-    let h = `<tr><th>#</th><th>КЛУБ</th><th>ОЧКИ</th></tr>`;
-    [...l.clubs].sort((a,b)=>b.pts-a.pts).forEach((c,i) => h += `<tr><td>${i+1}</td><td>${c.name}</td><td>${c.pts}</td></tr>`);
+    let h = `<tr><th>#</th><th>Клуб</th><th>О</th></tr>`;
+    [...l.clubs].sort((a,b) => b.pts - a.pts).forEach((c, i) => h += `<tr><td>${i+1}</td><td>${c.name}</td><td>${c.pts}</td></tr>`);
     document.getElementById('world-table').innerHTML = h;
 }
-
-function syncClubs() {
-    let l = document.getElementById('start-league').value;
-    let s = document.getElementById('start-club'); s.innerHTML = "";
-    LEAGUES_CONFIG[l].teams.forEach(t => s.innerHTML += `<option value="${t}">${t}</option>`);
-}
-
-function resetGame() { if(confirm("Сбросить игру?")) { localStorage.clear(); location.reload(); } }
 
 function tab(v, b) {
     document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
@@ -347,15 +284,13 @@ function tab(v, b) {
     b.classList.add('active');
 }
 
-const sl = document.getElementById('start-league');
-const wl = document.getElementById('w-league');
-const ml = document.getElementById('m-league');
+function resetGame() { localStorage.clear(); location.reload(); }
+
 for(let n in LEAGUES_CONFIG) { 
-    sl.innerHTML += `<option value="${n}">${n}</option>`; 
-    wl.innerHTML += `<option value="${n}">${n}</option>`; 
-    ml.innerHTML += `<option value="${n}">${n}</option>`;
+    document.getElementById('w-league').innerHTML += `<option value="${n}">${n}</option>`;
+    document.getElementById('f-league').innerHTML += `<option value="${n}">${n}</option>`;
 }
-syncClubs(); load();
+load();
 </script>
 </body>
 </html>
