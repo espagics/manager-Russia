@@ -2,13 +2,14 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Global Manager</title>
+    <title>Global Manager Pro 2026</title>
     <style>
-        :root { --bg: #020617; --panel: #0f172a; --accent: #38bdf8; --text: #f8fafc; --gold: #fbbf24; --danger: #ef4444; --green: #22c55e; --gray: #94a3b8; }
+        :root { --bg: #020617; --panel: #0f172a; --accent: #38bdf8; --text: #f8fafc; --gold: #fbbf24; --green: #22c55e; --gray: #94a3b8; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 300px; background: #070e1e; border-right: 1px solid #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .stat-card { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; }
         .balance { font-size: 18px; color: var(--green); font-weight: bold; }
+        .rating-badge { background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-left: 5px; }
         .main { flex: 1; padding: 20px; overflow-y: auto; background: radial-gradient(circle at top, #111827, #020617); }
         .box { background: #0f172a; border-radius: 12px; padding: 15px; border: 1px solid #1e293b; margin-bottom: 15px; }
         .view { display: none; } .view.active { display: block; }
@@ -16,10 +17,13 @@
         .tab-btn { padding: 10px; border: none; background: none; color: var(--gray); cursor: pointer; border-radius: 6px; flex: 1; font-size: 11px; font-weight: bold; }
         .tab-btn.active { background: var(--accent); color: #000; }
         .btn { background: var(--accent); color: #000; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        select, input { background: #1e293b; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { text-align: left; padding: 8px; color: var(--gray); border-bottom: 1px solid #1e293b; }
         td { padding: 8px; border-bottom: 1px solid #0f172a; }
-        .ucl-match { display: flex; justify-content: space-between; padding: 10px; background: #1e293b; margin-bottom: 5px; border-radius: 6px; border-left: 4px solid var(--gold); }
+        .ucl-stage-title { color: var(--gold); font-size: 14px; font-weight: bold; margin: 15px 0 5px 0; border-bottom: 1px solid #334155; padding-bottom: 3px; }
+        .ucl-match { display: flex; justify-content: space-between; padding: 8px; background: #1e293b; margin-bottom: 4px; border-radius: 4px; font-size: 12px; }
+        .ucl-match b { color: var(--gold); }
     </style>
 </head>
 <body>
@@ -27,19 +31,24 @@
 <div class="sidebar">
     <h2 style="color:var(--accent); margin:0;">UFG 2026</h2>
     <div class="stat-card">
-        <div id="ui-my-club" style="font-weight: bold; color: var(--accent);">Загрузка...</div>
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <span id="ui-my-club" style="font-weight: bold; color: var(--accent);">Загрузка...</span>
+            <span id="ui-team-ovr" class="rating-badge">0</span>
+        </div>
         <div id="ui-balance" class="balance">0 €</div>
     </div>
     <div id="ui-week" style="font-weight: bold; text-align:center;">НЕДЕЛЯ: 1</div>
-    <button class="btn" onclick="handleTurn()">СЛЕДУЮЩИЙ ТУР</button>
+    <div id="action-btn-container">
+        <button class="btn" onclick="handleTurn()">СЛЕДУЮЩИЙ ТУР</button>
+    </div>
     <button class="btn" style="background:#334155; color:white; margin-top:auto;" onclick="resetGame()">СБРОС КАРЬЕРЫ</button>
 </div>
 
 <div class="main">
     <div id="start-screen" class="box" style="display:none; max-width:400px; margin: 40px auto; text-align:center;">
         <h3>НОВАЯ ИГРА</h3>
-        <select id="start-league" onchange="syncClubs()" style="width:100%; padding:10px; margin-bottom:10px;"></select>
-        <select id="start-club" style="width:100%; padding:10px; margin-bottom:20px;"></select>
+        <select id="start-league" onchange="syncClubs('start-league', 'start-club')" style="margin-bottom:10px;"></select>
+        <select id="start-club" style="margin-bottom:20px;"></select>
         <button class="btn" onclick="startGame()">НАЧАТЬ КАРЬЕРУ</button>
     </div>
 
@@ -51,75 +60,94 @@
             <button class="tab-btn" onclick="tab('ucl', this)" style="color:var(--gold)">UCL</button>
         </div>
         <div id="v-home" class="view active"><div class="box"><table id="lineup-table"></table></div></div>
-        <div id="v-market" class="view"><div class="box"><div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;"><select id="f-league" onchange="searchPlayers()"><option value="">Все лиги</option></select><input type="text" id="f-club" placeholder="Клуб..." oninput="searchPlayers()" style="padding:8px; background:#1e293b; color:white; border:1px solid #334155; border-radius:4px;"><input type="number" id="f-rating" placeholder="Мин. РТГ" oninput="searchPlayers()" style="padding:8px; background:#1e293b; color:white; border:1px solid #334155; border-radius:4px;"></div><table id="market-results"></table></div></div>
+        
+        <div id="v-market" class="view">
+            <div class="box">
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <select id="m-league" onchange="syncMarketClubs(); searchPlayers()">
+                        <option value="">Все лиги</option>
+                    </select>
+                    <select id="m-club" onchange="searchPlayers()">
+                        <option value="">Все клубы</option>
+                    </select>
+                    <input type="number" id="m-rating" placeholder="Мин. РТГ" oninput="searchPlayers()">
+                </div>
+                <table id="market-results"></table>
+            </div>
+        </div>
+
         <div id="v-world" class="view"><div class="box"><select id="w-league" onchange="updateWorldTable()"></select><table id="world-table" style="margin-top:10px;"></table></div></div>
-        <div id="v-ucl" class="view"><div class="box" id="ucl-info"></div><div id="ucl-bracket"></div></div>
+        <div id="v-ucl" class="view">
+            <div class="box" id="ucl-info"></div>
+            <div id="ucl-bracket"></div>
+        </div>
     </div>
 </div>
 
 <script>
 const LEAGUES_CONFIG = {
     "РПЛ": {base:83, slots:4, budget:60, lang:"RU", teams:["Зенит","Краснодар","Спартак","Локомотив","Динамо М","ЦСКА","Ростов","Рубин","Крылья Советов","Ахмат","Пари НН","Оренбург","Факел","Акрон","Химки","Динамо Мх"]},
-    "ФНЛ": {base:75, slots:0, budget:40, lang:"RU", teams:["Балтика","Сочи","Урал","Торпедо","Арсенал","Енисей","Родина","КАМАЗ","Шинник","Нефтехимик","СКА","Уфа","Чайка","Черноморец","Тюмень","Ротор"]},
-    "Лига А": {base:70, slots:0, budget:20, lang:"RU", teams:["Велес","Муром","Новосибирск","Металлург Лп","Спартак Кс","Волгарь","Авангард","Текстильщик","Калуга","Иртыш"]},
-    "Лига Б": {base:65, slots:0, budget:10, lang:"RU", teams:["Динамо Кр","Композит","Спартак Тм","Зенит Пн","Сатурн","Динамо Бр","Орел","Квант","Сахалин","Коломна"]},
     "АПЛ": {base:84, slots:4, budget:90, lang:"EN", teams:["Ман Сити","Ливерпуль","Арсенал","Ман Юнайтед","Челси","Тоттенхэм","Ньюкасл","Астон Вилла","Брайтон","Вест Хэм","Вулверхэмптон","Кристал Пэлас","Фулхэм","Брентфорд","Борнмут","Ноттингем","Эвертон","Ипсвич","Лестер","Саутгемптон"]},
     "Ла Лига": {base:84, slots:4, budget:90, lang:"ES", teams:["Реал Мадрид","Барселона","Атлетико","Жирона","Атлетик","Реал Сосьедад","Бетис","Валенсия","Вильярреал","Хетафе","Осасуна","Севилья","Мальорка","Райо Вальекано","Сельта","Алавес","Эспаньол","Леганес","Вальядолид","Лас-Пальмас"]},
-    "Серия A": {base:83, slots:4, budget:90, lang:"IT", teams:["Ювентус","Интер","Милан","Наполи","Аталанта","Рома","Лацио","Фиорентина","Торино","Болонья","Монца","Дженоа","Удинезе","Верона","Лечче","Кальяри","Парма","Комо","Венеция","Эмполи"]},
     "Бундеслига": {base:83, slots:4, budget:90, lang:"DE", teams:["Бавария","Байер","Боруссия Д","РБ Лейпциг","Штутгарт","Айнтрахт","Хоффенхайм","Фрайбург","Хайденхайм","Вердер","Аугсбург","Вольфсбург","Боруссия М","Унион","Майнц","Санкт-Паули","Киль","Бохум"]},
     "Лига 1": {base:82, slots:4, budget:90, lang:"FR", teams:["ПСЖ","Монако","Марсель","Лион","Лилль","Ренн","Ницца","Ланс","Реймс","Страсбур","Монпелье","Тулуза","Нант","Гавр","Анже","Сент-Этьен","Осер","Брест"]},
+    "Серия A": {base:83, slots:4, budget:90, lang:"IT", teams:["Ювентус","Интер","Милан","Наполи","Аталанта","Рома","Лацио","Фиорентина","Торно","Болонья","Монца","Дженоа","Удинезе","Верона","Лечче","Кальяри","Парма","Комо","Венеция","Эмполи"]},
     "Суперлига": {base:79, slots:2, budget:60, lang:"TR", teams:["Галатасарай","Фенербахче","Бешикташ","Трабзонспор","Башакшехир","Касымпаша","Сивасспор","Аланьяспор","Ризеспор","Антальяспор","Газиантеп","Самсунспор","Кайсериспор","Хатайспор","Коньяспор","Бодрум","Эюпспор","Гёзтепе"]},
     "Примейра": {base:80, slots:2, budget:60, lang:"PT", teams:["Бенфика","Порту","Спортинг","Брага","Витория","Фамаликан","Риу Аве","Боавишта","Жил Висенте","Эшторил"]},
     "Эредивизи": {base:79, slots:2, budget:60, lang:"NL", teams:["ПСВ","Фейеноорд","Аякс","АЗ Алкмар","Твенте","Утрехт","Гоу Эхед","Спарта"]},
+    "ФНЛ": {base:75, slots:0, budget:40, lang:"RU", teams:["Балтика","Сочи","Урал","Торпедо","Арсенал","Енисей","Родина","КАМАЗ","Шинник","Нефтехимик","СКА","Уфа","Чайка","Черноморец","Тюмень","Ротор"]},
     "Бродячие": {base:79, slots:0, budget:30, lang:"GLOBAL", teams:["Карабах","Селтик","Рейнджерс","Шериф","Будэ-Глимт","Мольде","Црвена Звезда","Партизан","Пафос","Юнион СЖ","Брюгге","Копенгаген","Кайрат","Олимпиакос","Славия","Виктория","Динамо З","Зальцбург","Слован","Янг Бойз"]}
 };
 
 const REAL_PLAYERS = {
-    "Зенит": {GK:["Латышонок"], DEF:["Нино","Сантос","Эракович","Адамов","Чистяков"], MID:["Вендел","Клаудиньо","Барриос","Глушенков","Мостовой"], ATT:["Кассьерра","Соболев","Педро"]},
-    "Спартак": {GK:["Максименко"], DEF:["Бабич","Чернов","Денисов","Рябчук"], MID:["Барко","Мартинс","Зобнин","Пруцев"], ATT:["Угальде","Бонгонда","Маркиньос"]},
-    "Краснодар": {GK:["Агкацев"], DEF:["Тормена","Коста","Оласа","Петров"], MID:["Сперцян","Черников","Кривцов","Пина"], ATT:["Кордоба","Виктор Са","Батчи"]},
-    "ЦСКА": {GK:["Акинфеев"], DEF:["Роша","Дивеев","Мойзес","Келлвен"], MID:["Обляков","Зделар","Кисляк","Файзуллаев"], ATT:["Мусаев","Гуарирапа"]},
-    "Ман Сити": {GK:["Эдерсон"], DEF:["Диаш","Гвардиол","Аканджи","Уокер"], MID:["Родри","Де Брюйне","Фоден","Бернарду"], ATT:["Холанд","Грилиш","Доку"]},
-    "Арсенал": {GK:["Райя"], DEF:["Салиба","Габриэль","Уайт","Тимбер"], MID:["Эдегор","Райс","Мерино","Парти"], ATT:["Сака","Хавертц","Мартинелли"]},
-    "Ливерпуль": {GK:["Алиссон"], DEF:["Ван Дейк","Конате","Трент","Робертсон"], MID:["Мак Аллистер","Собослаи","Гравенберх"], ATT:["Салах","Нуньес","Диас"]},
-    "Реал Мадрид": {GK:["Куртуа"], DEF:["Рюдигер","Милитао","Карвахаль","Менди"], MID:["Беллингем","Вальверде","Модрич","Чуамени"], ATT:["Мбаппе","Винисиус","Родриго"]},
-    "Барселона": {GK:["Тер Штеген"], DEF:["Кубарси","Мартинес","Кунде","Бальде"], MID:["Педри","Гави","Ольмо","Де Йонг"], ATT:["Левандовски","Ямаль","Рафинья"]},
-    "ПСЖ": {GK:["Доннарумма"], DEF:["Маркиньос","Хакими","Мендеш","Лукас Эрнандес"], MID:["Заир-Эмери","Витинья","Невеш","Фабиан Руис"], ATT:["Дембеле","Барколя","Коло-Муани"]}
+    "Зенит": {GK:["Латышонок","Адамов"], DEF:["Нино","Сантос","Эракович","Адамов","Чистяков","Родригао"], MID:["Вендел","Клаудиньо","Барриос","Глушенков","Мостовой","Артур"], ATT:["Кассьерра","Соболев","Педро"]},
+    "Спартак": {GK:["Максименко","Селихов"], DEF:["Бабич","Чернов","Денисов","Рябчук","Абена"], MID:["Барко","Мартинс","Зобнин","Пруцев","Умяров","Медина"], ATT:["Угальде","Бонгонда","Маркиньос","Виллиан Жозе"]},
+    "Краснодар": {GK:["Агкацев"], DEF:["Тормена","Коста","Оласа","Петров","Кайо"], MID:["Сперцян","Черников","Кривцов","Пина","Кастаньо"], ATT:["Кордоба","Виктор Са","Батчи","Смолов"]},
+    "ЦСКА": {GK:["Акинфеев","Тороп"], DEF:["Роша","Дивеев","Мойзес","Келлвен","Круговой"], MID:["Обляков","Зделар","Кисляк","Файзуллаев","Бистрович"], ATT:["Мусаев","Гуарирапа","Койта"]},
+    "Локомотив": {GK:["Лантратов"], DEF:["Монтес","Ньямси","Сильянов","Тикнизян","Самошников"], MID:["Баринов","Карпукас","Батраков","Пиняев"], ATT:["Воробьев","Сулейманов"]},
+    "Динамо М": {GK:["Лунев"], DEF:["Бальбуэна","Фернандес","Даса","Лаксальт"], MID:["Чавес","Фомин","Карраскаль","Бителло"], ATT:["Тюкавин","Нгамале","Маухуб"]},
+    "Ман Сити": {GK:["Эдерсон","Ортега"], DEF:["Диаш","Гвардиол","Аканджи","Уокер","Стоунз"], MID:["Родри","Де Брюйне","Фоден","Бернарду","Гюндоган"], ATT:["Холанд","Грилиш","Доку","Савиньо"]},
+    "Арсенал": {GK:["Райя"], DEF:["Салиба","Габриэль","Уайт","Тимбер","Зинченко"], MID:["Эдегор","Райс","Мерино","Парти","Жоржиньо"], ATT:["Сака","Хавертц","Мартинелли","Троссард"]},
+    "Ливерпуль": {GK:["Алиссон","Келлехер"], DEF:["Ван Дейк","Конате","Трент","Робертсон","Цимикас"], MID:["Мак Аллистер","Собослаи","Гравенберх","Эллиотт"], ATT:["Салах","Нуньес","Диас","Жота","Гакпо"]},
+    "Реал Мадрид": {GK:["Куртуа","Лунин"], DEF:["Рюдигер","Милитао","Карвахаль","Менди","Алаба"], MID:["Беллингем","Вальверде","Модрич","Чуамени","Камавинга","Гюлер"], ATT:["Мбаппе","Винисиус","Родриго","Эндрик"]},
+    "Барселона": {GK:["Тер Штеген","Пенья"], DEF:["Кубарси","Мартинес","Кунде","Бальде","Араухо"], MID:["Педри","Гави","Ольмо","Де Йонг","Касадо"], ATT:["Левандовски","Ямаль","Рафинья","Ferran"]},
+    "Бавария": {GK:["Нойер"], DEF:["Упамекано","Ким","Дэвис","Геррейру"], MID:["Киммих","Павлович","Мусиала","Олисе"], ATT:["Кейн","Сане","Гнабри"]},
+    "Интер": {GK:["Зоммер"], DEF:["Бастони","Павар","Ачерби","Дюмфрис"], MID:["Барелла","Чалханоглу","Мхитарян","Димарко"], ATT:["Лаутаро","Тюрам","Тареми"]},
+    "Ювентус": {GK:["Ди Грегорио"], DEF:["Бремер","Гатти","Камбиазо","Калулу"], MID:["Копмейнерс","Дуглас Луис","Локателли","Йилдиз"], ATT:["Влахович","Веа","Консейсау"]},
+    "ПСЖ": {GK:["Доннарумма","Сафонов"], DEF:["Маркиньос","Хакими","Мендеш","Лукас Эрнандес","Бералдо"], MID:["Заир-Эмери","Витинья","Невеш","Фабиан Руис"], ATT:["Дембеле","Барколя","Коло-Муани","Асенсио"]}
 };
 
 const SURNAMES = {
-    "RU": ["Иванов", "Смирнов", "Петров", "Волков", "Кузнецов", "Соколов", "Лебедев", "Козлов", "Новиков", "Морозов"],
-    "EN": ["Smith", "Walker", "White", "Johnson", "Brown", "Taylor", "Miller", "Wilson", "Moore", "Anderson"],
-    "ES": ["Garcia", "Rodriguez", "Gonzalez", "Lopez", "Martinez", "Perez", "Sanchez", "Ramirez", "Torres", "Ruiz"],
-    "IT": ["Rossi", "Ferrari", "Russo", "Bianchi", "Esposito", "Colombo", "Romano", "Ricci", "Marino", "Greco"],
-    "DE": ["Muller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Koch"],
-    "FR": ["Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois", "Moreau", "Laurent"],
-    "TR": ["Yilmaz", "Kaya", "Demir", "Sahin", "Celik", "Yildiz", "Arslan", "Erdogan", "Polat", "Aydin"],
-    "PT": ["Silva", "Santos", "Ferreira", "Pereira", "Oliveira", "Costa", "Rodrigues", "Martins", "Jesus", "Sousa"],
-    "NL": ["De Jong", "Jansen", "De Vries", "Van den Berg", "Bakker", "Visser", "Smit", "Meijer", "De Boer", "Mulder"],
-    "GLOBAL": ["Aliyev", "Jovanovic", "Kovacs", "Hansen", "Larsen", "Stojanovic", "Popov", "Nielsen", "Ivanov", "Savic"]
+    "RU": ["Иванов", "Смирнов", "Петров", "Волков", "Кузнецов", "Соколов", "Лебедев", "Козлов", "Новиков", "Морозов", "Павлов", "Степанов", "Никитин", "Орлов"],
+    "EN": ["Smith", "Walker", "White", "Johnson", "Brown", "Taylor", "Miller", "Wilson", "Moore", "Anderson", "Palmer", "Rice", "Kane", "Cook"],
+    "ES": ["Garcia", "Rodriguez", "Gonzalez", "Lopez", "Martinez", "Perez", "Sanchez", "Ramirez", "Torres", "Ruiz", "Navarro", "Diaz", "Serrano"],
+    "IT": ["Rossi", "Ferrari", "Russo", "Bianchi", "Esposito", "Colombo", "Romano", "Ricci", "Marino", "Greco", "Conti", "Gallo", "Mancini"],
+    "DE": ["Muller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Koch", "Hoffmann", "Bauer", "Richter"],
+    "FR": ["Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois", "Moreau", "Laurent", "Simon", "Michel", "Leroy"],
+    "TR": ["Yilmaz", "Kaya", "Demir", "Sahin", "Celik", "Yildiz", "Arslan", "Erdogan", "Polat", "Aydin", "Ozkan", "Koc", "Bulut"],
+    "PT": ["Silva", "Santos", "Ferreira", "Pereira", "Oliveira", "Costa", "Rodrigues", "Martins", "Jesus", "Sousa", "Mendes", "Gomes", "Lopes"],
+    "NL": ["De Jong", "Jansen", "De Vries", "Van den Berg", "Bakker", "Visser", "Smit", "Meijer", "De Boer", "Mulder", "Dekker", "Vos", "Bos"],
+    "GLOBAL": ["Aliyev", "Jovanovic", "Kovacs", "Hansen", "Larsen", "Stojanovic", "Popov", "Nielsen", "Ivanov", "Savic", "Varga", "Modric", "Daka"]
 };
 
-let game = { club: "", league: "", balance: 0, week: 1, world: [], ucl: { stage: "Общий этап", table: [], playoffs: [], week: 1 } };
+let game = { club: "", league: "", balance: 0, week: 1, world: [], ucl: { stage: "Общий этап", table: [], history: [], currentPlayoffs: [], week: 1, finished: false } };
+
+function getTeamOVR(squad) {
+    if (!squad.length) return 0;
+    return Math.round(squad.reduce((a, b) => a + b.rating, 0) / squad.length);
+}
 
 function getPrice(r) {
     if (r >= 90) return 120000000;
-    if (r === 89) return 100000000;
-    if (r === 88) return 90000000;
-    if (r === 87) return 80000000;
-    if (r === 86) return 70000000;
-    if (r === 85) return 60000000;
-    if (r >= 80) return 40000000;
-    if (r >= 75) return 20000000;
-    return 10000000;
+    if (r >= 85) return 65000000;
+    if (r >= 80) return 30000000;
+    return 8000000;
 }
 
 function generateSquad(team, league) {
     let sq = [];
     let base = LEAGUES_CONFIG[league].base;
-    let lang = LEAGUES_CONFIG[league].lang;
-    let pool = SURNAMES[lang] || SURNAMES["GLOBAL"];
-
+    let pool = SURNAMES[LEAGUES_CONFIG[league].lang] || SURNAMES["GLOBAL"];
     if (REAL_PLAYERS[team]) {
         for (let pos in REAL_PLAYERS[team]) {
             REAL_PLAYERS[team][pos].forEach(name => {
@@ -128,38 +156,50 @@ function generateSquad(team, league) {
         }
     } else {
         ["GK","DEF","DEF","DEF","DEF","MID","MID","MID","ATT","ATT","ATT"].forEach(pos => {
-            let name = pool[Math.floor(Math.random()*pool.length)];
-            sq.push({ id: Math.random(), name: name, pos: pos, rating: base + Math.floor(Math.random()*6), inLineup: true });
+            sq.push({ id: Math.random(), name: pool[Math.floor(Math.random()*pool.length)], pos: pos, rating: base + Math.floor(Math.random()*6), inLineup: true });
         });
     }
     return sq;
 }
 
 function save() { localStorage.setItem('ufg_2026_pro', JSON.stringify(game)); }
+
 function load() {
     const s = localStorage.getItem('ufg_2026_pro');
-    if(s) { game = JSON.parse(s); document.getElementById('game-ui').style.display='block'; updateUI(); }
-    else { document.getElementById('start-screen').style.display='block'; fillStart(); }
+    if(s) { 
+        game = JSON.parse(s); 
+        document.getElementById('game-ui').style.display='block'; 
+        updateUI(); 
+    } else { 
+        document.getElementById('start-screen').style.display='block'; 
+        fillStart(); 
+    }
 }
 
 function fillStart() {
     let sl = document.getElementById('start-league');
+    sl.innerHTML = "";
     for(let n in LEAGUES_CONFIG) if(n !== "Бродячие") sl.innerHTML += `<option value="${n}">${n}</option>`;
-    syncClubs();
+    syncClubs('start-league', 'start-club');
 }
 
-function syncClubs() {
-    let l = document.getElementById('start-league').value;
-    let sc = document.getElementById('start-club'); sc.innerHTML = "";
-    LEAGUES_CONFIG[l].teams.forEach(t => sc.innerHTML += `<option value="${t}">${t}</option>`);
+function syncClubs(lId, cId) {
+    let lName = document.getElementById(lId).value;
+    let sc = document.getElementById(cId);
+    sc.innerHTML = lId === 'm-league' ? '<option value="">Все клубы</option>' : '';
+    if (lName && LEAGUES_CONFIG[lName]) {
+        LEAGUES_CONFIG[lName].teams.forEach(t => sc.innerHTML += `<option value="${t}">${t}</option>`);
+    }
 }
+
+function syncMarketClubs() { syncClubs('m-league', 'm-club'); }
 
 function startGame() {
     game.league = document.getElementById('start-league').value;
     game.club = document.getElementById('start-club').value;
     game.balance = LEAGUES_CONFIG[game.league].budget * 1000000;
     for(let lName in LEAGUES_CONFIG) {
-        let clubs = LEAGUES_CONFIG[lName].teams.map(name => ({ name, pts: 0, g: 0, squad: generateSquad(name, lName) }));
+        let clubs = LEAGUES_CONFIG[lName].teams.map(name => ({ name, pts: 0, squad: generateSquad(name, lName) }));
         game.world.push({ name: lName, clubs });
     }
     initUCL(); save(); location.reload();
@@ -168,82 +208,107 @@ function startGame() {
 function initUCL() {
     let pool = [];
     game.world.forEach(l => {
-        if (LEAGUES_CONFIG[l.name].slots > 0) { pool.push(...l.clubs.slice(0, LEAGUES_CONFIG[l.name].slots).map(c => ({ name: c.name, pts: 0 }))); }
+        let slots = LEAGUES_CONFIG[l.name].slots;
+        if (slots > 0) {
+            let sorted = [...l.clubs].sort((a,b) => b.pts - a.pts);
+            pool.push(...sorted.slice(0, slots).map(c => ({ name: c.name, pts: 0 }))); 
+        }
     });
-    pool.push(...game.world.find(l => l.name === "Бродячие").clubs.slice(0, 6).map(c => ({ name: c.name, pts: 0 })));
-    game.ucl.table = pool;
+    let wandering = [...game.world.find(l => l.name === "Бродячие").clubs];
+    let selectedWandering = wandering.sort(() => 0.5 - Math.random()).slice(0, 6);
+    pool.push(...selectedWandering.map(c => ({ name: c.name, pts: 0 })));
+    game.ucl = { stage: "Общий этап", table: pool, history: [], currentPlayoffs: [], week: 1, finished: false };
+}
+
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ НАЧАЛА НОВОГО СЕЗОНА
+function startNewSeason() {
+    game.world.forEach(l => l.clubs.forEach(c => c.pts = 0));
+    game.week = 1;
+    initUCL(); // Пересобираем ЛЧ по итогам таблиц
+    save();
+    location.reload();
 }
 
 function handleTurn() {
-    if (game.week < 8) {
-        game.world.forEach(l => l.clubs.forEach(c => { if(Math.random() > 0.5) c.pts += 3; }));
-        game.ucl.table.forEach(t => { if(Math.random() > 0.5) t.pts += 3; });
-        game.ucl.week++;
-    } else if (game.week === 8) { startUCLPlayoffs(); } else { simulateUCLStage(); }
+    if (game.ucl.finished) return;
+    game.world.forEach(l => {
+        const maxWeeks = (LEAGUES_CONFIG[l.name].teams.length - 1) * 2;
+        if (game.week <= maxWeeks) l.clubs.forEach(c => { if(Math.random() > 0.5) c.pts += 3; });
+    });
+    if (game.week % 4 === 0) {
+        if (game.ucl.week <= 8) {
+            game.ucl.table.forEach(t => { if(Math.random() > 0.5) t.pts += 3; });
+            if (game.ucl.week === 8) startUCLPlayoffs();
+            game.ucl.week++;
+        } else if (game.ucl.stage !== "ФИНАЛ") {
+            simulateUCLStage();
+        } else {
+            simulateUCLStage(); game.ucl.finished = true;
+        }
+    }
     game.week++; save(); updateUI();
 }
 
 function startUCLPlayoffs() {
     game.ucl.table.sort((a,b) => b.pts - a.pts);
     game.ucl.stage = "Стыковые матчи";
-    let teams9to24 = game.ucl.table.slice(8, 24);
-    game.ucl.playoffs = [];
-    for(let i=0; i<teams9to24.length; i+=2) { game.ucl.playoffs.push({ t1: teams9to24[i].name, t2: teams9to24[i+1].name, s1: 0, s2: 0, winner: "" }); }
+    let t924 = game.ucl.table.slice(8, 24);
+    game.ucl.currentPlayoffs = [];
+    for(let i=0; i<t924.length; i+=2) game.ucl.currentPlayoffs.push({ t1: t924[i].name, t2: t924[i+1].name, s1: 0, s2: 0, winner: "" }); 
 }
 
 function simulateUCLStage() {
-    game.ucl.playoffs.forEach(m => {
+    game.ucl.currentPlayoffs.forEach(m => {
         m.s1 = Math.floor(Math.random()*4); m.s2 = Math.floor(Math.random()*4);
-        if(m.s1 === m.s2) m.s1++;
+        if(m.s1 === m.s2) Math.random() > 0.5 ? m.s1++ : m.s2++;
         m.winner = m.s1 > m.s2 ? m.t1 : m.t2;
     });
+    game.ucl.history.push({ stage: game.ucl.stage, matches: [...game.ucl.currentPlayoffs] });
     if (game.ucl.stage === "Стыковые матчи") {
-        let winners = game.ucl.playoffs.map(m => m.winner);
+        let w = game.ucl.currentPlayoffs.map(m => m.winner);
         let top8 = game.ucl.table.slice(0, 8).map(t => t.name);
         game.ucl.stage = "1/8 финала";
-        game.ucl.playoffs = top8.map((t, i) => ({ t1: t, t2: winners[i], s1:0, s2:0, winner: "" }));
-    } else if (game.ucl.stage === "1/8 финала") { nextUCLStage("1/4 финала"); } 
-    else if (game.ucl.stage === "1/4 финала") { nextUCLStage("1/2 финала"); } 
-    else if (game.ucl.stage === "1/2 финала") { nextUCLStage("ФИНАЛ"); }
+        game.ucl.currentPlayoffs = top8.map((t, i) => ({ t1: t, t2: w[i], s1:0, s2:0, winner: "" }));
+    } else if (game.ucl.stage === "1/8 финала") nextUCLStage("1/4 финала");
+    else if (game.ucl.stage === "1/4 финала") nextUCLStage("1/2 финала");
+    else if (game.ucl.stage === "1/2 финала") nextUCLStage("ФИНАЛ");
 }
 
 function nextUCLStage(name) {
-    let winners = game.ucl.playoffs.map(m => m.winner);
-    game.ucl.stage = name; game.ucl.playoffs = [];
-    for(let i=0; i<winners.length; i+=2) { if(winners[i+1]) game.ucl.playoffs.push({ t1: winners[i], t2: winners[i+1], s1:0, s2:0, winner: "" }); }
+    let w = game.ucl.currentPlayoffs.map(m => m.winner);
+    game.ucl.stage = name; game.ucl.currentPlayoffs = [];
+    for(let i=0; i<w.length; i+=2) if(w[i+1]) game.ucl.currentPlayoffs.push({ t1: w[i], t2: w[i+1], s1:0, s2:0, winner: "" }); 
 }
 
 function searchPlayers() {
-    const fL = document.getElementById('f-league').value;
-    const fC = document.getElementById('f-club').value.toLowerCase();
-    const fR = parseInt(document.getElementById('f-rating').value) || 0;
+    const fL = document.getElementById('m-league').value;
+    const fC = document.getElementById('m-club').value;
+    const fR = parseInt(document.getElementById('m-rating').value) || 0;
     let res = [];
     game.world.forEach(l => {
         if(!fL || l.name === fL) {
             l.clubs.forEach(c => {
-                if(c.name !== game.club && (!fC || c.name.toLowerCase().includes(fC))) {
+                if(c.name !== game.club && (!fC || c.name === fC)) {
                     c.squad.forEach(p => { if(p.rating >= fR) res.push({...p, club: c.name}); });
                 }
             });
         }
     });
     let h = `<tr><th>Игрок</th><th>РТГ</th><th>Цена</th><th></th></tr>`;
-    res.sort((a,b) => b.rating - a.rating).slice(0, 15).forEach(p => {
-        let price = getPrice(p.rating);
-        h += `<tr><td>${p.name}<br><small>${p.club}</small></td><td>${p.rating}</td><td>${(price/1000000).toFixed(0)}М</td><td><button onclick="buyPlayer('${p.club}', ${p.id}, ${price})">BUY</button></td></tr>`;
+    res.sort((a,b) => b.rating - a.rating).slice(0, 20).forEach(p => {
+        let pr = getPrice(p.rating);
+        h += `<tr><td>${p.name}<br><small>${p.club}</small></td><td>${p.rating}</td><td>${(pr/1000000).toFixed(1)}М</td><td><button onclick="buyPlayer('${p.club}', ${p.id}, ${pr})">BUY</button></td></tr>`;
     });
     document.getElementById('market-results').innerHTML = h;
 }
 
-function buyPlayer(fromName, id, price) {
-    if (game.balance < price) return alert("Недостаточно средств!");
-    let fromClub;
-    game.world.forEach(l => l.clubs.forEach(c => { if(c.name === fromName) fromClub = c; }));
-    let pIdx = fromClub.squad.findIndex(x => x.id === id);
-    let p = fromClub.squad.splice(pIdx, 1)[0];
-    game.balance -= price;
-    let myClub = game.world.find(l => l.name === game.league).clubs.find(c => c.name === game.club);
-    myClub.squad.push(p);
+function buyPlayer(fromN, id, pr) {
+    if (game.balance < pr) return alert("Недостаточно средств!");
+    let fromC; game.world.forEach(l => l.clubs.forEach(c => { if(c.name === fromN) fromC = c; }));
+    let pIdx = fromC.squad.findIndex(x => x.id === id);
+    let p = fromC.squad.splice(pIdx, 1)[0];
+    game.balance -= pr;
+    game.world.find(l => l.name === game.league).clubs.find(c => c.name === game.club).squad.push(p);
     save(); updateUI(); searchPlayers();
 }
 
@@ -252,20 +317,32 @@ function updateUI() {
     document.getElementById('ui-my-club').innerText = game.club;
     document.getElementById('ui-balance').innerText = game.balance.toLocaleString() + " €";
     document.getElementById('ui-week').innerText = `НЕДЕЛЯ: ${game.week}`;
+    document.getElementById('ui-team-ovr').innerText = getTeamOVR(myClub.squad);
+
+    const btnC = document.getElementById('action-btn-container');
+    btnC.innerHTML = game.ucl.finished ? `<button class="btn" style="background:var(--gold)" onclick="startNewSeason()">НОВЫЙ СЕЗОН</button>` : `<button class="btn" onclick="handleTurn()">СЛЕДУЮЩИЙ ТУР</button>`;
+    
     let h = `<tr><th>Поз</th><th>Имя</th><th>РТГ</th></tr>`;
-    myClub.squad.forEach(p => h += `<tr><td>${p.pos}</td><td>${p.name}</td><td>${p.rating}</td></tr>`);
+    myClub.squad.sort((a,b) => b.rating - a.rating).forEach(p => h += `<tr><td>${p.pos}</td><td>${p.name}</td><td>${p.rating}</td></tr>`);
     document.getElementById('lineup-table').innerHTML = h;
     updateWorldTable(); updateUCLUI();
 }
 
 function updateUCLUI() {
-    document.getElementById('ucl-info').innerText = `${game.ucl.stage}`;
+    document.getElementById('ucl-info').innerHTML = `<b>${game.ucl.stage}</b>`;
     let h = "";
+    game.ucl.history.forEach(hs => {
+        h += `<div class="ucl-stage-title">${hs.stage}</div>`;
+        hs.matches.forEach(m => h += `<div class="ucl-match"><span>${m.t1}</span> <b>${m.s1}:${m.s2}</b> <span>${m.t2}</span></div>`);
+    });
     if (game.ucl.stage === "Общий этап") {
-        h = "<table><tr><th>#</th><th>Клуб</th><th>О</th></tr>";
-        [...game.ucl.table].sort((a,b) => b.pts - a.pts).forEach((t, i) => { h += `<tr><td>${i+1}</td><td>${t.name}</td><td>${t.pts}</td></tr>`; });
+        h += `<div class="ucl-stage-title">Таблица</div><table>`;
+        [...game.ucl.table].sort((a,b) => b.pts - a.pts).forEach((t, i) => h += `<tr><td>${i+1}</td><td>${t.name}</td><td>${t.pts}</td></tr>`);
         h += "</table>";
-    } else { game.ucl.playoffs.forEach(m => { h += `<div class="ucl-match"><span>${m.t1}</span> <b>${m.s1}:${m.s2}</b> <span>${m.t2}</span></div>`; }); }
+    } else if (!game.ucl.finished) {
+        h += `<div class="ucl-stage-title">Текущие пары</div>`;
+        game.ucl.currentPlayoffs.forEach(m => h += `<div class="ucl-match"><span>${m.t1}</span> <b>${m.s1}:${m.s2}</b> <span>${m.t2}</span></div>`);
+    }
     document.getElementById('ucl-bracket').innerHTML = h;
 }
 
@@ -288,7 +365,7 @@ function resetGame() { localStorage.clear(); location.reload(); }
 
 for(let n in LEAGUES_CONFIG) { 
     document.getElementById('w-league').innerHTML += `<option value="${n}">${n}</option>`;
-    document.getElementById('f-league').innerHTML += `<option value="${n}">${n}</option>`;
+    document.getElementById('m-league').innerHTML += `<option value="${n}">${n}</option>`;
 }
 load();
 </script>
